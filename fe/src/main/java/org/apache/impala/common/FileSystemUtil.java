@@ -100,6 +100,7 @@ public class FileSystemUtil {
           .add(SCHEME_ABFSS)
           .add(SCHEME_ADL)
           .add(SCHEME_HDFS)
+          .add(SCHEME_O3FS)
           .add(SCHEME_S3A)
           .build();
 

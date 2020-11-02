@@ -102,9 +102,12 @@ add_service_principal() {
 add_principal $USER/admin@$MINIKDC_REALM
 
 # Add service principals.
-for svc in $USER hdfs mapred yarn HTTP hive hbase zookeeper impala impala-be
+for svc in $USER hdfs mapred yarn HTTP hive hbase zookeeper impala impala-be ozone
 do
   add_service_principal $svc/localhost@$MINIKDC_REALM
+  if [[ "localhost" != "${INTERNAL_LISTEN_HOST}" ]]; then
+    add_service_principal "${svc}/${INTERNAL_LISTEN_HOST}@${MINIKDC_REALM}"
+  fi
 done
 
 # Kinit as the regular users.

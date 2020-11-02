@@ -190,6 +190,13 @@ export CDP_PARQUET_VERSION=1.10.99.7.2.7.0-44
 export CDP_RANGER_VERSION=2.1.0.7.2.7.0-44
 export CDP_TEZ_VERSION=0.9.1.7.2.7.0-44
 
+# Override IMPALA_TOOLCHAIN_OZONE_VERSION with "" in branch/local config when
+# using a toolchain version without Ozone.
+# This variable distinguishes between Ozone used only as a Maven dependency and
+# Ozone being part of the mini cluster.  The latter is possible only if the
+# toolchain contains Ozone.
+export IMPALA_TOOLCHAIN_OZONE_VERSION=$CDP_OZONE_VERSION
+
 export ARCH_NAME=$(uname -p)
 
 export IMPALA_HUDI_VERSION=0.5.0-incubating
@@ -375,6 +382,13 @@ export METASTORE_DB=${METASTORE_DB-"$(cut -c-59 <<< HMS$ESCAPED_IMPALA_HOME)_cdp
 # Set the Hive binaries in the path
 export PATH="$HIVE_HOME/bin:$PATH"
 
+export OZONE_HOME="$CDP_COMPONENTS_HOME/ozone-${IMPALA_OZONE_VERSION}"
+export OZONE_FS_JAR=
+if [[ -e "${OZONE_HOME}" ]]; then
+  OZONE_FS_JAR=$(echo ${OZONE_HOME}/share/ozone/lib/hadoop-ozone-filesystem-hadoop3*.jar)
+  PATH="$PATH:$OZONE_HOME/bin"
+fi
+
 RANGER_POLICY_DB=${RANGER_POLICY_DB-$(cut -c-63 <<< ranger$ESCAPED_IMPALA_HOME)}
 # The DB script in Ranger expects the database name to be in lower case.
 export RANGER_POLICY_DB=$(echo ${RANGER_POLICY_DB} | tr '[:upper:]' '[:lower:]')
@@ -523,9 +537,20 @@ elif [ "${TARGET_FILESYSTEM}" = "hdfs" ]; then
     export HDFS_ERASURECODE_POLICY="RS-3-2-1024k"
     export HDFS_ERASURECODE_PATH="/test-warehouse"
   fi
+elif [ "${TARGET_FILESYSTEM}" = "o3fs" ]; then
+  if [[ -z "${IMPALA_TOOLCHAIN_OZONE_VERSION}" ]]; then
+    echo "In order to use Ozone filesystem, IMPALA_TOOLCHAIN_OZONE_VERSION"
+    echo "needs to be set to ${IMPALA_OZONE_VERSION}."
+    return 1
+  fi
+
+  # TODO make configurable
+  export OZONE_VOLUME=vol1
+  export OZONE_BUCKET=bucket1
+  export DEFAULT_FS="o3fs://${OZONE_BUCKET}.${OZONE_VOLUME}.${INTERNAL_LISTEN_HOST}"
 else
   echo "Unsupported filesystem '$TARGET_FILESYSTEM'"
-  echo "Valid values are: hdfs, isilon, s3, local"
+  echo "Valid values are: abfs, adls, hdfs, isilon, o3fs, s3, local"
   return 1
 fi
 
@@ -696,6 +721,12 @@ export CLASSPATH="$IMPALA_FE_DIR/target/dependency:${CLASSPATH:+:${CLASSPATH}}"
 CLASSPATH="$IMPALA_FE_DIR/target/classes:$CLASSPATH"
 CLASSPATH="$IMPALA_FE_DIR/src/test/resources:$CLASSPATH"
 
+if [[ -n "${OZONE_FS_JAR}" ]] && [[ -e "${OZONE_FS_JAR}" ]]; then
+  AUX_CLASSPATH="${AUX_CLASSPATH}:${OZONE_FS_JAR}"
+  HADOOP_CLASSPATH="${HADOOP_CLASSPATH}:${OZONE_FS_JAR}"
+  CLASSPATH="${CLASSPATH}:${OZONE_FS_JAR}"
+fi
+
 # A marker in the environment to prove that we really did source this file
 export IMPALA_CONFIG_SOURCED=1
 
@@ -710,6 +741,7 @@ echo "HIVE_CONF_DIR           = $HIVE_CONF_DIR"
 echo "HIVE_SRC_DIR            = $HIVE_SRC_DIR"
 echo "HBASE_HOME              = $HBASE_HOME"
 echo "HBASE_CONF_DIR          = $HBASE_CONF_DIR"
+echo "OZONE_HOME              = $OZONE_HOME"
 echo "RANGER_HOME             = $RANGER_HOME"
 echo "RANGER_CONF_DIR         = $RANGER_CONF_DIR "
 echo "THRIFT_HOME             = $THRIFT_HOME"
@@ -732,8 +764,10 @@ echo "IMPALA_HIVE_VERSION     = $IMPALA_HIVE_VERSION"
 echo "IMPALA_HBASE_VERSION    = $IMPALA_HBASE_VERSION"
 echo "IMPALA_HUDI_VERSION     = $IMPALA_HUDI_VERSION"
 echo "IMPALA_KUDU_VERSION     = $IMPALA_KUDU_VERSION"
+echo "IMPALA_OZONE_VERSION    = $IMPALA_OZONE_VERSION"
 echo "IMPALA_RANGER_VERSION   = $IMPALA_RANGER_VERSION"
 echo "IMPALA_ICEBERG_VERSION  = $IMPALA_ICEBERG_VERSION"
+echo "TARGET_FILESYSTEM       = $TARGET_FILESYSTEM"
 
 # Kerberos things.  If the cluster exists and is kerberized, source
 # the required environment.  This is required for any hadoop tool to

@@ -56,6 +56,9 @@ export KILL_CLUSTER_MARKER=IBelongToTheMiniCluster
 if [[ "$TARGET_FILESYSTEM" == "hdfs" ]]; then
   # The check above indicates that the regular mini-cluster is in use.
   SUPPORTED_SERVICES=(hdfs kms yarn)
+elif [[ "$TARGET_FILESYSTEM" == "o3fs" ]]; then
+  # Use Ozone instead of HDFS
+  SUPPORTED_SERVICES=(ozone kms yarn)
 else
   # Either a remote distributed file system or a local non-distributed file system is
   # in use. Currently the only service that is expected to work is Kudu, though in theory
@@ -86,6 +89,7 @@ export YARN_WEBUI_PORT=8088   # same as default
 export KMS_WEBUI_PORT=9600    # changed to make room for non-ephemeral HBase ports
                               # (HADOOP-12811)
 export KUDU_WEBUI_PORT=8051   # same as default
+export OZONE_WEBUI_PORT=9874  # default (for OM)
 
 # Empty dirs that should be included in the templates. Since git ignores empty dirs it is
 # easier to maintain them here.
@@ -216,6 +220,7 @@ function create_cluster {
     if [[ $NODE_IDX -gt 1 ]]; then
       # Remove master role scripts from slave nodes
       rm -f "$NODE_DIR/etc/init.d/"{hdfs-namenode,yarn-resourcemanager} \
+            "$NODE_DIR/etc/init.d/ozone-"{om,scm} \
             "$NODE_DIR/etc/init.d/"{kms,kudu-master}
       # Only run one YARN nodemanager (more memory-efficient to scale up a
       # single NM than run several)
@@ -337,6 +342,8 @@ function start {
   exec_init_script "$SERVICE*" start
   if [ "${SERVICE}" = "hdfs" ]; then
       chmod_hdfs_root
+  elif [ "${SERVICE}" = "ozone" ]; then
+    ensure_bucket_exists
   fi
 }
 
@@ -362,6 +369,21 @@ function chmod_hdfs_root {
         # Become ourselves again.
         kinit -k -t ${KRB5_KTNAME} ${PREVIOUS_PRINCIPAL}
     fi
+}
+
+function ensure_bucket_exists {
+  # create Ozone volume and bucket
+  if is_kerberized; then
+    PREVIOUS_PRINCIPAL=`klist | grep ^Default | awk '{print $3}'`
+    kinit -k -t ${KRB5_KTNAME} ${MINIKDC_PRINC_OZONE}
+  fi
+
+  ozone sh volume create "/${OZONE_VOLUME}" || true
+  ozone sh bucket create "/${OZONE_VOLUME}/${OZONE_BUCKET}" || true
+
+  if is_kerberized; then
+    kinit -k -t ${KRB5_KTNAME} ${PREVIOUS_PRINCIPAL}
+  fi
 }
 
 function exec_init_script {
@@ -461,10 +483,15 @@ function delete_data {
   rm -rf "$IMPALA_CLUSTER_NODES_DIR/$NODE_PREFIX"*/data/dfs/{nn,dn}/*
   rm -f "$IMPALA_CLUSTER_NODES_DIR/$NODE_PREFIX"*/data/kms.keystore
   delete_kudu_data
+  delete_ozone_data
 }
 
 function delete_kudu_data {
   rm -rf "$IMPALA_CLUSTER_NODES_DIR/$NODE_PREFIX"*/var/lib/kudu/{master,ts}/*
+}
+
+function delete_ozone_data {
+  rm -rf "$IMPALA_CLUSTER_NODES_DIR/$NODE_PREFIX"*/data/ozone/{om,scm,dn}/*
 }
 
 function delete_cluster {

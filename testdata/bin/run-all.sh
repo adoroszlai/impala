@@ -80,7 +80,7 @@ elif [[ ${DEFAULT_FS} == "${LOCAL_FS}" ]]; then
   $IMPALA_HOME/testdata/bin/run-hive-server.sh -only_metastore 2>&1 | \
       tee ${IMPALA_CLUSTER_LOGS_DIR}/run-hive-server.log
 else
-  # With Isilon, we only start the Hive metastore.
+  # With Isilon or Ozone, we only start the Hive metastore.
   #   - HDFS is not started becuase Isilon is used as the defaultFs in core-site
   #   - HBase is irrelevent for Impala testing with Isilon.
   #   - We don't yet have a good way to start YARN using a different defaultFS. Moreoever,

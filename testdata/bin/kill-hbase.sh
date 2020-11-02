@@ -35,7 +35,11 @@ ${HBASE_HOME}/bin/stop-hbase.sh
 # TODO: is this still needed when using bin/stop-hbase.sh?
 rm -rf /tmp/hbase-*
 
+if [[ -n "${OZONE_FS_JAR}" ]] && [[ -e "${OZONE_FS_JAR}" ]]; then
+  export HADOOP_CLASSPATH="${HADOOP_CLASSPATH}:${OZONE_FS_JAR}"
+fi
+
 # HACK: Some jobs have seen the HBase master fail to initialize with mesages like:
 # "Master startup cannot progress, in holding-pattern until region onlined."
 # Anecdotally, removing the MasterProcWALs directory avoids the issue.
-hdfs dfs -rm /hbase/MasterProcWALs/* || true
+timeout 30 hdfs dfs -rm /hbase/MasterProcWALs/* || true

@@ -46,6 +46,7 @@ export MINIKDC_REALM=${MINIKDC_ORG}.${MINIKDC_DOMAIN}
 #   the impala shell that the principal isn't 'impala'.
 #
 export MINIKDC_PRINC_HDFS=hdfs/localhost@${MINIKDC_REALM}
+export MINIKDC_PRINC_OZONE=ozone/localhost@${MINIKDC_REALM}
 export MINIKDC_PRINC_MAPR=mapred/localhost@${MINIKDC_REALM}
 export MINIKDC_PRINC_YARN=yarn/localhost@${MINIKDC_REALM}
 export MINIKDC_PRINC_HTTP=HTTP/localhost@${MINIKDC_REALM}

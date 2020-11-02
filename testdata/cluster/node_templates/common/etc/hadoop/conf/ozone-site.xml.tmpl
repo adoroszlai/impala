@@ -1,0 +1,129 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+  <property>
+    <name>ozone.metadata.dirs</name>
+    <value>${NODE_DIR}/data/ozone</value>
+  </property>
+
+  <property>
+    <name>ozone.om.db.dirs</name>
+    <value>${NODE_DIR}/data/ozone/om</value>
+  </property>
+
+  <property>
+    <name>ozone.scm.db.dirs</name>
+    <value>${NODE_DIR}/data/ozone/scm</value>
+  </property>
+
+  <property>
+    <name>hdds.datanode.dir</name>
+    <value>${NODE_DIR}/data/ozone/data</value>
+  </property>
+
+  <property>
+    <name>ozone.om.http-address</name>
+    <value>${EXTERNAL_LISTEN_HOST}:${OZONE_WEBUI_PORT}</value>
+  </property>
+
+  <property>
+    <name>hdds.datanode.http-address</name>
+    <value>${EXTERNAL_LISTEN_HOST}:${DATANODE_HTTP_PORT}</value>
+  </property>
+
+  <property>
+    <name>dfs.container.ipc</name>
+    <value>${DATANODE_IPC_PORT}</value>
+  </property>
+
+  <property>
+    <name>dfs.container.ratis.ipc</name>
+    <value>${DATANODE_PORT}</value>
+  </property>
+
+  <property>
+    <name>hdds.datanode.https-address</name>
+    <value>${INTERNAL_LISTEN_HOST}:${DATANODE_HTTPS_PORT}</value>
+  </property>
+
+  <property>
+    <name>ozone.scm.client.address</name>
+    <value>${INTERNAL_LISTEN_HOST}</value>
+  </property>
+
+  <property>
+    <name>ozone.scm.names</name>
+    <value>${INTERNAL_LISTEN_HOST}</value>
+  </property>
+
+  <property>
+    <name>ozone.scm.container.size</name>
+    <value>1GB</value>
+  </property>
+
+  <property>
+    <name>ozone.scm.pipeline.creation.interval</name>
+    <value>30s</value>
+  </property>
+
+  <property>
+    <name>ozone.scm.pipeline.owner.container.count</name>
+    <value>1</value>
+  </property>
+
+  <!-- BEGIN Kerberos settings -->
+  <!-- We use the MiniKdc; it generates a keytab and krb5.conf; we point
+       everyone at that one keytab and go to town... -->
+  <property>
+    <name>ozone.security.enabled</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>ozone.om.kerberos.keytab.file</name>
+    <value>${KRB5_KTNAME}</value>
+  </property>
+
+  <property>
+    <name>ozone.om.kerberos.principal</name>
+    <value>${MINIKDC_PRINC_OZONE}</value>
+  </property>
+
+  <property>
+    <name>ozone.om.http.auth.kerberos.principal</name>
+    <value>${MINIKDC_PRINC_HTTP}</value>
+  </property>
+
+  <property>
+    <name>hdds.scm.kerberos.keytab.file</name>
+    <value>${KRB5_KTNAME}</value>
+  </property>
+
+  <property>
+    <name>hdds.scm.kerberos.principal</name>
+    <value>${MINIKDC_PRINC_OZONE}</value>
+  </property>
+
+  <property>
+    <name>ozone.scm.http.auth.kerberos.principal</name>
+    <value>${MINIKDC_PRINC_HTTP}</value>
+  </property>
+
+  <property>
+    <name>dfs.datanode.keytab.file</name>
+    <value>${KRB5_KTNAME}</value>
+  </property>
+
+  <property>
+    <name>dfs.datanode.kerberos.principal</name>
+    <value>${MINIKDC_PRINC_OZONE}</value>
+  </property>
+
+  <property>
+    <name>hdds.datanode.http.auth.kerberos.principal</name>
+    <value>${MINIKDC_PRINC_HTTP}</value>
+  </property>
+  <!-- END Kerberos settings -->
+
+</configuration>

@@ -320,7 +320,6 @@ class CdpComponent(EnvVersionedPackage):
                                        unpack_directory_tmpl=unpack_directory_tmpl,
                                        makedir=makedir, template_subs_in=template_subs)
 
-
 class ToolchainKudu(ToolchainPackage):
   def __init__(self, platform_label=None):
     super(ToolchainKudu, self).__init__('kudu', platform_release=platform_label)
@@ -467,6 +466,14 @@ def get_hadoop_downloads():
   tez = CdpComponent("tez", archive_basename_tmpl="tez-${version}-minimal",
                      makedir=True)
   cluster_components.extend([hadoop, hbase, hive, hive_src, tez])
+
+  ozone_version = os.environ.get("IMPALA_TOOLCHAIN_OZONE_VERSION")
+  if ozone_version != '':
+    ozone = CdpComponent("ozone", explicit_version=ozone_version,
+        archive_basename_tmpl="hadoop-ozone-${version}",
+        unpack_directory_tmpl="ozone-${version}")
+    cluster_components.extend([ozone])
+
   # Ranger is always CDP
   cluster_components.append(CdpComponent("ranger",
                                          archive_basename_tmpl="ranger-${version}-admin"))
