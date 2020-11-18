@@ -738,7 +738,14 @@ echo "IMPALA_ICEBERG_VERSION  = $IMPALA_ICEBERG_VERSION"
 # kerberized cluster is created, it will have to be sourced again
 # *after* the cluster is created in order to pick up these settings.
 export MINIKDC_ENV="${IMPALA_HOME}/testdata/bin/minikdc_env.sh"
-if "${CLUSTER_DIR}/admin" is_kerberized; then
+if "${CLUSTER_DIR}/admin" cluster_exists && ! "${CLUSTER_DIR}/admin" is_kerberized \
+  || [[ "$IMPALA_KERBERIZE" != "true" ]]; then
+  # If the cluster *isn't* kerberized, ensure that the environment isn't
+  # polluted with kerberos items that might screw us up.  We go through
+  # everything set in the minikdc environment and explicitly unset it.
+  unset `grep export "${MINIKDC_ENV}" | sed "s/.*export \([^=]*\)=.*/\1/" \
+      | sort | uniq`
+else
   . "${MINIKDC_ENV}"
   echo " *** This cluster is kerberized ***"
   echo "KRB5_KTNAME            = $KRB5_KTNAME"
@@ -746,12 +753,6 @@ if "${CLUSTER_DIR}/admin" is_kerberized; then
   echo "KRB5_TRACE             = ${KRB5_TRACE:-}"
   echo "HADOOP_OPTS            = $HADOOP_OPTS"
   echo " *** This cluster is kerberized ***"
-else
-  # If the cluster *isn't* kerberized, ensure that the environment isn't
-  # polluted with kerberos items that might screw us up.  We go through
-  # everything set in the minikdc environment and explicitly unset it.
-  unset `grep export "${MINIKDC_ENV}" | sed "s/.*export \([^=]*\)=.*/\1/" \
-      | sort | uniq`
 fi
 
 # Check for minimum required Java version
